@@ -61,7 +61,6 @@ def svm_loss_naive(W, X, y, reg):
 
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-    print(dW)
     return loss, dW
 
 
@@ -108,7 +107,6 @@ def svm_loss_vectorized(W, X, y, reg):
     dW /= N
     #dW[y] = 0
     dW += 2 * reg * W
-    print(dW)
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     return loss, dW
