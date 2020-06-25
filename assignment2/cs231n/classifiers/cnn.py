@@ -62,8 +62,16 @@ class ThreeLayerConvNet(object):
         # the start of the loss() function to see how that happens.                #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        C, H, W = input_dim
 
-        pass
+        self.params['W1'] = np.random.randn(num_filters, C, filter_size, filter_size) * weight_scale
+        self.params['b1'] = np.zeros(num_filters)
+
+        self.params['W2'] = np.random.randn(H * W * num_filters // 4, hidden_dim) * weight_scale
+        self.params['b2'] = np.zeros(hidden_dim)
+
+        self.params['W3'] = np.random.randn(hidden_dim, num_classes) * weight_scale
+        self.params['b3'] = np.zeros(num_classes)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -102,7 +110,9 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        scores, conv_cache = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
+        scores, hidden_cache = affine_relu_forward(scores, W2, b2)
+        scores, final_cache = affine_forward(scores, W3, b3)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -125,7 +135,23 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dx = softmax_loss(scores, y)  # softmax
+        for W in W1, W2, W3:                # L2 regularization
+            loss += 0.5 * self.reg * np.sum(W ** 2)
+
+        dx, dW3, db3 = affine_backward(dx, final_cache)
+        dx, dW2, db2 = affine_relu_backward(dx, hidden_cache)
+        dx, dW1, db1 = conv_relu_pool_backward(dx, conv_cache)
+
+        dW1 += self.reg * W1
+        dW2 += self.reg * W2
+        dW3 += self.reg * W3
+
+        grads = {
+            'W1': dW1, 'b1': db1,
+            'W2': dW2, 'b2': db2,
+            'W3': dW3, 'b3': db3
+        }
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
