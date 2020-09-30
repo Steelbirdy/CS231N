@@ -33,9 +33,13 @@ def compute_saliency_maps(X, y, model):
     # the gradients with a backward pass.                                        #
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
-
+    scores = model(X)
+    corrected = scores.gather(1, y.view(-1, 1)).squeeze()
+    corrected.backward(torch.FloatTensor([1.0, 1.0, 1.0, 1.0, 1.0]))
+    saliency = X.grad.data
+    saliency = saliency.abs()
+    saliency, _ = torch.max(saliency, dim=1)
+    saliency = saliency.squeeze()
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                             END OF YOUR CODE                               #

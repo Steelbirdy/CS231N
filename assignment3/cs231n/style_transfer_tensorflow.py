@@ -15,9 +15,30 @@ def tv_loss(img, tv_weight):
     """
     # Your implementation should be vectorized and not require any loops!
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
-
+    # imgt = tf.reshape(img, (*img.shape[1:],)).numpy()
+    # h_shifted = tf.roll(imgt, shift=-1, axis=0).numpy()
+    # v_shifted = tf.roll(imgt, shift=-1, axis=1).numpy()
+    # h_diff = h_shifted - imgt
+    # h_diff[-1, :] = 0
+    # v_diff = v_shifted - imgt
+    # v_diff[:, -1] = 0
+    #
+    # return tv_weight * np.sum(np.square(h_diff) + np.square(v_diff))  # Summation over RGB channels
+    Wx = np.zeros([1, 2, 3, 3])
+    Wx[0, 0:, 0, 0] = [-1, 1]
+    Wx[0, 0:, 1, 1] = [-1, 1]
+    Wx[0, 0:, 2, 2] = [-1, 1]
+    Wx = tf.constant(Wx, dtype=tf.float32)
+    Wy = np.zeros([2, 1, 3, 3])
+    Wy[0:, 0, 0, 0] = [-1, 1]
+    Wy[0:, 0, 1, 1] = [-1, 1]
+    Wy[0:, 0, 2, 2] = [-1, 1]
+    Wy = tf.constant(Wy, dtype=tf.float32)
+    loss_x = tf.nn.conv2d(img, Wx, strides=[1, 1, 1, 1], padding='VALID')
+    loss_y = tf.nn.conv2d(img, Wy, strides=[1, 1, 1, 1], padding='VALID')
+    loss = tf.nn.l2_loss(loss_x) + tf.nn.l2_loss(loss_y)
+    loss *= tv_weight * 2
+    return loss
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
 def style_loss(feats, style_layers, style_targets, style_weights):
@@ -42,8 +63,14 @@ def style_loss(feats, style_layers, style_targets, style_weights):
     # not be short code (~5 lines). You will need to use your gram_matrix function.
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
-
+    # style_loss = 0
+    # for i, layer in enumerate(style_layers):
+    #     style_loss += style_weights[i] * tf.square(tf.norm(gram_matrix(feats[layer]) - style_targets[i]))
+    # return style_loss
+    style_loss = 0
+    for idx, layer in enumerate(style_layers):
+        style_loss += style_weights[idx] * 2 * tf.nn.l2_loss(gram_matrix(feats[layer]) - style_targets[idx])
+    return style_loss
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
 def gram_matrix(features, normalize=True):
@@ -61,9 +88,18 @@ def gram_matrix(features, normalize=True):
       Gram matrices for the input image.
     """
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
-
+    # _, H, W, C = features.shape
+    # f2 = tf.reshape(features, (C, -1))
+    # result = tf.matmul(f2, f2, transpose_b=True)
+    # if normalize:
+    #     result /= H * W * C
+    # return result
+    v = tf.transpose(features, perm=[3, 1, 2, 0])
+    v = tf.reshape(v, [tf.shape(features)[3], -1])
+    gram = tf.matmul(v, tf.transpose(v))
+    if normalize:
+        gram /= float(tf.size(features)) * float(tf.shape(features)[0])
+    return gram
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
 def content_loss(content_weight, content_current, content_original):
@@ -79,9 +115,10 @@ def content_loss(content_weight, content_current, content_original):
     - scalar content loss
     """
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
-
+    # For some reason I always get an error of 0.258, but I'm almost positive this is the way to do it
+    # return content_weight * tf.square(tf.norm(content_original - content_current))
+    loss = content_weight * 2 * tf.nn.l2_loss(content_original - content_current)
+    return loss
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
 # We provide this helper code which takes an image, a model (cnn), and returns a list of
